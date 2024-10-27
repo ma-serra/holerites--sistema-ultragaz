@@ -1,0 +1,573 @@
+<html><head><base href="funcionarios-holerites.php">
+<title>Holerites - Sistema UltraGaz</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- CSS Dependencies -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css" rel="stylesheet">
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+<style>
+:root {
+  --ultragaz-blue: #0046AD;
+  --ultragaz-yellow: #FFB700;
+  --gradient-primary: linear-gradient(135deg, var(--ultragaz-blue) 0%, #0063ff 100%);
+}
+
+body {
+  background: #f5f7fa;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 0 35px rgba(0,0,0,0.07);
+  border-radius: 15px;
+}
+
+.card-header {
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 15px 15px 0 0 !important;
+  padding: 1.2rem 1.5rem;
+}
+
+.filter-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 25px rgba(0,0,0,0.05);
+}
+
+.select2-container--bootstrap-5 .select2-selection {
+  border: 1px solid #dee2e6;
+  padding: 0.375rem 0.75rem;
+  height: calc(3.5rem + 2px);
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+.btn-ultragaz {
+  background: var(--gradient-primary);
+  border: none;
+  color: white;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-ultragaz:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,70,173,0.3);
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.status-pending {
+  background: #fff8e1;
+  color: #ff9800;
+}
+
+.status-processed {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+.status-error {
+  background: #ffebee;
+  color: #f44336;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  padding: 1rem;
+  background: #f8f9fa;
+}
+
+.table tbody td {
+  padding: 1rem;
+  vertical-align: middle;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin: 0 0.2rem;
+}
+
+.btn-view {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.btn-print {
+  background: #f3e5f5;
+  color: #9c27b0;
+}
+
+.btn-edit {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.spinner-container {
+  text-align: center;
+}
+
+.custom-loader {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 5px solid var(--ultragaz-blue);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: var(--ultragaz-blue) !important;
+  color: white !important;
+  border: none;
+}
+
+.select2-container {
+  width: 100% !important;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container-fluid py-4">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Gerenciamento de Holerites</h5>
+      <button class="btn btn-ultragaz" id="btnNovoLote">
+        <i class="fas fa-plus-circle me-2"></i>Gerar Novo Lote
+      </button>
+    </div>
+    
+    <div class="card-body">
+      <div class="filter-card">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Mês Referência</label>
+            <input type="month" class="form-control" id="mesReferencia">
+          </div>
+          
+          <div class="col-md-4">
+            <label class="form-label">Funcionário</label>
+            <select class="form-control select2" id="funcionario">
+              <option value="">Todos os funcionários</option>
+            </select>
+          </div>
+          
+          <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="status">
+              <option value="">Todos</option>
+              <option value="pending">Pendente</option>
+              <option value="processed">Processado</option>
+              <option value="error">Erro</option>
+            </select>
+          </div>
+          
+          <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-ultragaz w-100" id="btnFiltrar">
+              <i class="fas fa-filter me-2"></i>Filtrar
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="table-responsive">
+        <table id="holeriteTable" class="table table-hover">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Funcionário</th>
+              <th>Mês Ref.</th>
+              <th>Data Geração</th>
+              <th>Status</th>
+              <th>Valor Total</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Dados serão inseridos via DataTables -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" style="display: none;">
+  <div class="spinner-container">
+    <div class="custom-loader mb-3"></div>
+    <h6 class="text-muted">Processando...</h6>
+  </div>
+</div>
+
+<!-- JavaScript Dependencies -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/pt-br.js"></script>
+
+<script>
+const mockHolerites = [
+  {
+    id: 1,
+    funcionario: "João Silva",
+    mesRef: "2024-03-01",
+    dataGeracao: "2024-03-10T14:30:00",
+    status: "processed",
+    valorTotal: 3500.00
+  },
+  {
+    id: 2,
+    funcionario: "Maria Santos",
+    mesRef: "2024-03-01", 
+    dataGeracao: "2024-03-10T14:35:00",
+    status: "pending",
+    valorTotal: 4200.00
+  },
+  {
+    id: 3,
+    funcionario: "Pedro Oliveira",
+    mesRef: "2024-03-01",
+    dataGeracao: "2024-03-10T14:40:00", 
+    status: "error",
+    valorTotal: 2800.00
+  },
+  {
+    id: 4,
+    funcionario: "Ana Costa",
+    mesRef: "2024-02-01",
+    dataGeracao: "2024-02-10T10:00:00",
+    status: "processed",
+    valorTotal: 3800.00
+  }
+];
+
+const mockFuncionarios = [
+  { id: 1, nome: "João Silva", matricula: "F001" },
+  { id: 2, nome: "Maria Santos", matricula: "F002" },
+  { id: 3, nome: "Pedro Oliveira", matricula: "F003" },
+  { id: 4, nome: "Ana Costa", matricula: "F004" }
+];
+
+class HoleriteManager {
+  constructor() {
+    this.dataTable = null;
+    this.loading = false;
+    this.initializeComponents();
+    this.bindEvents();
+  }
+
+  initializeComponents() {
+    // Inicializa Select2
+    $('.select2').select2({
+      theme: 'bootstrap-5',
+      placeholder: 'Selecione um funcionário',
+      allowClear: true,
+      data: mockFuncionarios.map(item => ({
+        id: item.id,
+        text: `${item.nome} (${item.matricula})`
+      }))
+    });
+
+    // Inicializa DataTable
+    this.dataTable = $('#holeriteTable').DataTable({
+      data: mockHolerites,
+      columns: [
+        { data: 'id' },
+        { data: 'funcionario' },
+        { 
+          data: 'mesRef',
+          render: (data) => moment(data).format('MMMM [de] YYYY')
+        },
+        {
+          data: 'dataGeracao',
+          render: (data) => moment(data).format('DD/MM/YYYY HH:mm')
+        },
+        {
+          data: 'status',
+          render: (data) => this.getStatusBadge(data)
+        },
+        {
+          data: 'valorTotal',
+          render: (data) => this.formatarMoeda(data)
+        },
+        {
+          data: null,
+          orderable: false,
+          render: (data) => this.renderActions(data)
+        }
+      ],
+      language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+      },
+      order: [[0, 'desc']],
+      pageLength: 10,
+      responsive: true
+    });
+  }
+
+  bindEvents() {
+    $('#btnFiltrar').on('click', () => this.filterData());
+    
+    $('#btnNovoLote').on('click', () => this.gerarNovoLote());
+    
+    $(document).on('click', '.btn-view', (e) => {
+      const id = $(e.currentTarget).data('id');
+      this.visualizarHolerite(id);
+    });
+    
+    $(document).on('click', '.btn-print', (e) => {
+      const id = $(e.currentTarget).data('id');
+      this.imprimirHolerite(id);
+    });
+    
+    $(document).on('click', '.btn-edit', (e) => {
+      const id = $(e.currentTarget).data('id');
+      this.editarHolerite(id);
+    });
+  }
+  
+  filterData() {
+    const mesRef = $('#mesReferencia').val();
+    const funcionario = $('#funcionario').val();
+    const status = $('#status').val();
+    
+    const filteredData = mockHolerites.filter(item => {
+      const matchMes = !mesRef || item.mesRef.startsWith(mesRef);
+      const matchFunc = !funcionario || item.funcionario.includes(funcionario);
+      const matchStatus = !status || item.status === status;
+      return matchMes && matchFunc && matchStatus;
+    });
+    
+    this.dataTable.clear();
+    this.dataTable.rows.add(filteredData);
+    this.dataTable.draw();
+  }
+
+  setLoading(state) {
+    this.loading = state;
+    $('.loading-overlay').toggle(state);
+  }
+
+  getStatusBadge(status) {
+    const statusMap = {
+      pending: { class: 'status-pending', text: 'Pendente', icon: 'clock' },
+      processed: { class: 'status-processed', text: 'Processado', icon: 'check-circle' },
+      error: { class: 'status-error', text: 'Erro', icon: 'exclamation-circle' }
+    };
+    
+    const { class: className, text, icon } = statusMap[status] || statusMap.pending;
+    return `
+      <span class="status-badge ${className}">
+        <i class="fas fa-${icon} me-1"></i>${text}
+      </span>
+    `;
+  }
+
+  formatarMoeda(valor) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(valor);
+  }
+
+  renderActions(data) {
+    return `
+      <div class="d-flex justify-content-center">
+        <button class="btn action-btn btn-view" data-id="${data.id}" title="Visualizar">
+          <i class="fas fa-eye"></i>
+        </button>
+        <button class="btn action-btn btn-print" data-id="${data.id}" title="Imprimir">
+          <i class="fas fa-print"></i>
+        </button>
+        <button class="btn action-btn btn-edit" data-id="${data.id}" title="Editar">
+          <i class="fas fa-edit"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  async gerarNovoLote() {
+    try {
+      const { value: mesRef } = await Swal.fire({
+        title: 'Gerar Novo Lote',
+        input: 'month',
+        inputLabel: 'Selecione o mês de referência',
+        showCancelButton: true,
+        confirmButtonText: 'Gerar',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (value) => {
+          if (!value) {
+            return 'Você precisa selecionar um mês!';
+          }
+        }
+      });
+
+      if (mesRef) {
+        this.setLoading(true);
+        
+        // Simulando chamada à API
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Sucesso!',
+          text: 'Lote de holerites gerado com sucesso.',
+          confirmButtonText: 'OK'
+        });
+        
+        this.dataTable.ajax.reload();
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro',
+        text: 'Ocorreu um erro ao gerar o lote de holerites.',
+        confirmButtonText: 'OK'
+      });
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  visualizarHolerite(id) {
+    window.open(`print-holerite.php?id=${id}`, '_blank');
+  }
+
+  imprimirHolerite(id) {
+    window.open(`print-holerite.php?id=${id}&print=true`, '_blank');
+  }
+
+  async editarHolerite(id) {
+    try {
+      const holerite = {
+        id,
+        funcionario: 'João Silva',
+        mesRef: '2024-03',
+        valorTotal: 2500.00
+      };
+      
+      const { value: formValues } = await Swal.fire({
+        title: 'Editar Holerite',
+        html: `
+          <div class="mb-3">
+            <label class="form-label">Funcionário</label>
+            <input type="text" class="form-control" value="${holerite.funcionario}" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mês Referência</label>
+            <input type="month" class="form-control" value="${holerite.mesRef}" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Valor Total</label>
+            <input type="number" id="valorTotal" class="form-control" value="${holerite.valorTotal}" step="0.01">
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Salvar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+          const valorTotal = document.getElementById('valorTotal').value;
+          if (!valorTotal) {
+            Swal.showValidationMessage('O valor total é obrigatório');
+          }
+          return { valorTotal };
+        }
+      });
+
+      if (formValues) {
+        this.setLoading(true);
+        
+        // Simulando chamada à API
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Sucesso!',
+          text: 'Holerite atualizado com sucesso.',
+          confirmButtonText: 'OK'
+        });
+        
+        this.dataTable.ajax.reload();
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro',
+        text: 'Ocorreu um erro ao editar o holerite.',
+        confirmButtonText: 'OK'
+      });
+    } finally {
+      this.setLoading(false);
+    }
+  }
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  moment.locale('pt-br');
+  new HoleriteManager();
+  
+  // Define mês atual como padrão no filtro
+  document.getElementById('mesReferencia').value = moment().format('YYYY-MM');
+});
+</script>
+
+</body></html>
